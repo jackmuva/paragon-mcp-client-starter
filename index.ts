@@ -4,9 +4,9 @@ import {
 	Tool,
 } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import readline from "readline/promises";
 import dotenv from "dotenv";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 
 dotenv.config();
 
@@ -18,7 +18,7 @@ if (!ANTHROPIC_API_KEY) {
 class MCPClient {
 	private mcp: Client;
 	private anthropic: Anthropic;
-	private transport: StdioClientTransport | null = null;
+	private transport: SSEClientTransport | null = null;
 	private tools: Tool[] = [];
 
 	constructor() {
@@ -36,11 +36,6 @@ class MCPClient {
 			if (!isJs && !isPy) {
 				throw new Error("Server script must be a .js or .py file");
 			}
-			const command = isPy
-				? process.platform === "win32"
-					? "python"
-					: "python3"
-				: process.execPath;
 
 			if (!process.env.PARAGON_PROJECT_ID) {
 				throw new Error("PARAGON_PROJECT_ID is not set");
@@ -50,15 +45,9 @@ class MCPClient {
 				throw new Error("SIGNING_KEY is not set");
 			}
 
-			this.transport = new StdioClientTransport({
-				command,
-				args: [serverScriptPath],
-				env: {
-					PARAGON_USER: process.env.PARAGON_USER,
-					PARAGON_PROJECT_ID: process.env.PARAGON_PROJECT_ID,
-					SIGNING_KEY: process.env.SIGNING_KEY
-				}
-			});
+			this.transport = new SSEClientTransport(
+				new URL("http://localhost:3000/sse")
+			);
 			this.mcp.connect(this.transport);
 
 			const toolsResult = await this.mcp.listTools();
@@ -162,10 +151,6 @@ class MCPClient {
 }
 
 async function main() {
-	if (process.argv.length < 3) {
-		console.log("Usage: node index.ts <path_to_server_script>");
-		return;
-	}
 	const mcpClient = new MCPClient();
 	try {
 		await mcpClient.connectToServer(process.argv[2]);
