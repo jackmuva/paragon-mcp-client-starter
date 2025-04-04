@@ -49,7 +49,6 @@ class MCPClient {
 			} else if (!process.env.SIGNING_KEY) {
 				throw new Error("SIGNING_KEY is not set");
 			}
-			console.log(`USER = ${process.env.USER}`);
 
 			this.transport = new StdioClientTransport({
 				command,
