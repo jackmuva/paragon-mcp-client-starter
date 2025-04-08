@@ -29,14 +29,8 @@ class MCPClient {
 	}
 
 	// methods will go here
-	async connectToServer(serverScriptPath: string) {
+	async connectToServer() {
 		try {
-			const isJs = serverScriptPath.endsWith(".js");
-			const isPy = serverScriptPath.endsWith(".py");
-			if (!isJs && !isPy) {
-				throw new Error("Server script must be a .js or .py file");
-			}
-
 			if (!process.env.PARAGON_PROJECT_ID) {
 				throw new Error("PARAGON_PROJECT_ID is not set");
 			} else if (!process.env.PARAGON_USER) {
@@ -51,6 +45,7 @@ class MCPClient {
 			this.mcp.connect(this.transport);
 
 			const toolsResult = await this.mcp.listTools();
+			console.log(`tool results: ${toolsResult}`);
 			this.tools = toolsResult.tools.map((tool) => {
 				return {
 					name: tool.name,
@@ -153,7 +148,7 @@ class MCPClient {
 async function main() {
 	const mcpClient = new MCPClient();
 	try {
-		await mcpClient.connectToServer(process.argv[2]);
+		await mcpClient.connectToServer();
 		await mcpClient.chatLoop();
 	} finally {
 		await mcpClient.cleanup();
